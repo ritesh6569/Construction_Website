@@ -40,8 +40,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Add new plot with image upload
-router.post('/', upload.single('image'), async (req, res) => {
+// Add new plot with image upload (admin only)
+router.post('/', verifyAdmin, upload.single('image'), async (req, res) => {
   try {
     const plotData = {
       title: req.body.title,

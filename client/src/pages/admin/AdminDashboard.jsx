@@ -6,19 +6,106 @@ export default function AdminDashboard() {
   const [plots, setPlots] = useState([]);
   const [inquiries, setInquiries] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [showAddPlot, setShowAddPlot] = useState(false);
+  const [plotForm, setPlotForm] = useState({ title: '', description: '', location: '', price: '', contactInfo: '' });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileError, setFileError] = useState('');
+  const [fileInputRef, setFileInputRef] = useState(null);
+  const [message, setMessage] = useState('');
   const token = localStorage.getItem('adminToken');
 
   useEffect(() => {
     if (tab === 'plots') {
-      axios.get(' https://construction-website-x1xn.onrender.com/api/plots', { headers: { Authorization: `Bearer ${token}` } }).then(res => setPlots(res.data));
+      axios.get('https://construction-website-x1xn.onrender.com/api/plots', { headers: { Authorization: `Bearer ${token}` } }).then(res => setPlots(res.data));
     }
     if (tab === 'inquiries') {
-      axios.get(' https://construction-website-x1xn.onrender.com/inquiries', { headers: { Authorization: `Bearer ${token}` } }).then(res => setInquiries(res.data));
+      axios.get('https://construction-website-x1xn.onrender.com/api/inquiries', { headers: { Authorization: `Bearer ${token}` } }).then(res => setInquiries(res.data));
     }
     if (tab === 'bookings') {
-      axios.get(' https://construction-website-x1xn.onrender.com/api/bookings', { headers: { Authorization: `Bearer ${token}` } }).then(res => setBookings(res.data));
+      axios.get('https://construction-website-x1xn.onrender.com/api/bookings', { headers: { Authorization: `Bearer ${token}` } }).then(res => setBookings(res.data));
     }
   }, [tab, token]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setFileError('');
+    
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setFileError('Please select an image file (JPEG, PNG, etc.)');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        setFileError('File size must be less than 5MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (fileInputRef) {
+      fileInputRef.click();
+    }
+  };
+
+  const handleAddPlot = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append('title', plotForm.title);
+      formData.append('description', plotForm.description);
+      formData.append('location', plotForm.location);
+      formData.append('price', plotForm.price);
+      formData.append('contactInfo', plotForm.contactInfo);
+      if (selectedFile) {
+        formData.append('image', selectedFile);
+      }
+      
+      await axios.post('https://construction-website-x1xn.onrender.com/api/plots', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      setMessage('Plot added successfully!');
+      setPlotForm({ title: '', description: '', location: '', price: '', contactInfo: '' });
+      setSelectedFile(null);
+      setShowAddPlot(false);
+      
+      // Refresh plots list
+      const res = await axios.get('https://construction-website-x1xn.onrender.com/api/plots', { headers: { Authorization: `Bearer ${token}` } });
+      setPlots(res.data);
+      
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setMessage('Error adding plot. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  const handleDeletePlot = async (plotId) => {
+    if (window.confirm('Are you sure you want to delete this plot? This action cannot be undone.')) {
+      try {
+        await axios.delete(`https://construction-website-x1xn.onrender.com/api/plots/${plotId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        setMessage('Plot deleted successfully!');
+        // Refresh plots list
+        const res = await axios.get('https://construction-website-x1xn.onrender.com/api/plots', { headers: { Authorization: `Bearer ${token}` } });
+        setPlots(res.data);
+        
+        setTimeout(() => setMessage(''), 3000);
+      } catch (err) {
+        setMessage('Error deleting plot. Please try again.');
+        setTimeout(() => setMessage(''), 3000);
+      }
+    }
+  };
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -68,13 +155,135 @@ export default function AdminDashboard() {
         {/* Plots Section */}
         {tab === 'plots' && (
           <div className="space-y-6">
+            {/* Success/Error Message */}
+            {message && (
+              <div className={`p-4 rounded-lg text-center font-semibold ${
+                message.includes('successfully') ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+              }`}>
+                {message}
+              </div>
+            )}
+            
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-slate-800">Property Plots</h2>
-              <div className="text-sm text-slate-500">Total: {plots.length} plots</div>
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-slate-500">Total: {plots.length} plots</div>
+                <button 
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                  onClick={() => setShowAddPlot(!showAddPlot)}
+                >
+                  {showAddPlot ? 'Cancel' : 'Add New Plot'}
+                </button>
+              </div>
             </div>
+
+            {/* Add Plot Form */}
+            {showAddPlot && (
+              <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-200">
+                <h3 className="text-xl font-bold text-slate-800 mb-6">Add New Plot</h3>
+                <form onSubmit={handleAddPlot} className="grid gap-6 md:grid-cols-2">
+                  <input 
+                    className="border border-slate-300 bg-white text-slate-800 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                    placeholder="Plot Title" 
+                    value={plotForm.title} 
+                    onChange={e => setPlotForm(f => ({ ...f, title: e.target.value }))} 
+                    required 
+                  />
+                  <input 
+                    className="border border-slate-300 bg-white text-slate-800 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                    placeholder="Location" 
+                    value={plotForm.location} 
+                    onChange={e => setPlotForm(f => ({ ...f, location: e.target.value }))} 
+                    required 
+                  />
+                  <input 
+                    className="border border-slate-300 bg-white text-slate-800 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                    placeholder="Price (₹)" 
+                    type="number" 
+                    value={plotForm.price} 
+                    onChange={e => setPlotForm(f => ({ ...f, price: e.target.value }))} 
+                    required 
+                  />
+                  <input 
+                    className="border border-slate-300 bg-white text-slate-800 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                    placeholder="Contact Info" 
+                    value={plotForm.contactInfo} 
+                    onChange={e => setPlotForm(f => ({ ...f, contactInfo: e.target.value }))} 
+                  />
+                  
+                  {/* File Upload */}
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Plot Image</label>
+                    <div 
+                      className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                      onClick={handleUploadClick}
+                    >
+                      {selectedFile ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-center space-x-2">
+                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-slate-800 font-medium">{selectedFile.name}</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFile(null);
+                              setFileError('');
+                            }}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Remove file
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <svg className="mx-auto w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          <div className="text-slate-600">
+                            <span className="font-medium">Click to upload</span> or drag and drop
+                          </div>
+                          <p className="text-xs text-slate-500">PNG, JPG, JPEG up to 5MB</p>
+                        </div>
+                      )}
+                      <input 
+                        ref={setFileInputRef}
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    {fileError && (
+                      <p className="text-red-600 text-sm mt-1">{fileError}</p>
+                    )}
+                  </div>
+                  
+                  <textarea 
+                    className="col-span-2 border border-slate-300 bg-white text-slate-800 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" 
+                    placeholder="Description" 
+                    rows="4"
+                    value={plotForm.description} 
+                    onChange={e => setPlotForm(f => ({ ...f, description: e.target.value }))} 
+                    required 
+                  />
+                  
+                  <button 
+                    className="col-span-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors" 
+                    type="submit"
+                  >
+                    Add Plot
+                  </button>
+                </form>
+              </div>
+            )}
+
             <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {plots.map(plot => (
-                <div key={plot._id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100">
+                <div key={plot._id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100 relative">
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="text-xl font-bold text-slate-800 line-clamp-2">{plot.title}</h3>
@@ -99,6 +308,20 @@ export default function AdminDashboard() {
                           <span>{plot.contactInfo}</span>
                         </div>
                       )}
+                    </div>
+                    
+                    {/* Delete Button - Bottom Right */}
+                    <div className="flex justify-end mt-4">
+                      <button
+                        onClick={() => handleDeletePlot(plot._id)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg transition-colors flex items-center space-x-1"
+                        title="Delete Plot"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span className="text-sm font-medium">Delete</span>
+                      </button>
                     </div>
                   </div>
                 </div>

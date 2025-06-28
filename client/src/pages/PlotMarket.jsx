@@ -6,50 +6,16 @@ const demoImage = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb'
 
 export default function PlotMarket() {
   const [plots, setPlots] = useState([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', location: '', price: '', image: '', contactInfo: '' });
   const [inquiry, setInquiry] = useState({ name: '', email: '', message: '' });
   const [message, setMessage] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fileError, setFileError] = useState('');
-  const [fileInputRef, setFileInputRef] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
   const [bookingModal, setBookingModal] = useState({ open: false, plot: null });
   const [bookingForm, setBookingForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [bookingStatus, setBookingStatus] = useState('');
-  const isAdmin = !!localStorage.getItem('adminToken');
 
   useEffect(() => {
-    axios.get(' https://construction-website-x1xn.onrender.com/api/plots').then(res => setPlots(res.data));
+    axios.get('https://construction-website-x1xn.onrender.com/api/plots').then(res => setPlots(res.data));
   }, []);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setFileError('');
-    
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setFileError('Please select an image file (JPEG, PNG, etc.)');
-        return;
-      }
-      
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        setFileError('File size must be less than 5MB');
-        return;
-      }
-      
-      setSelectedFile(file);
-      setForm(f => ({ ...f, image: file }));
-    }
-  };
-
-  const handleUploadClick = () => {
-    if (fileInputRef) {
-      fileInputRef.click();
-    }
-  };
 
   const handleImageError = (plotId) => {
     setImageErrors(prev => ({ ...prev, [plotId]: true }));
@@ -60,7 +26,7 @@ export default function PlotMarket() {
       return demoImage;
     }
     if (plot.image && plot.image.startsWith('/uploads/')) {
-      const imageUrl = ` https://construction-website-x1xn.onrender.com${plot.image}`;
+      const imageUrl = `https://construction-website-x1xn.onrender.com${plot.image}`;
       return imageUrl;
     }
     if (plot.image && plot.image.startsWith('http')) {
@@ -69,41 +35,10 @@ export default function PlotMarket() {
     return demoImage;
   };
 
-  const handleAddPlot = async (e) => {
-    e.preventDefault();
-    try {
-      const formData = new FormData();
-      formData.append('title', form.title);
-      formData.append('description', form.description);
-      formData.append('location', form.location);
-      formData.append('price', form.price);
-      formData.append('contactInfo', form.contactInfo);
-      if (form.image) {
-        formData.append('image', form.image);
-      }
-      await axios.post(' https://construction-website-x1xn.onrender.com/api/plots', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setMessage('Plot added successfully!');
-      setForm({ title: '', description: '', location: '', price: '', image: '', contactInfo: '' });
-      setSelectedFile(null);
-      setShowAdd(false);
-      // Refresh plots list
-      const res = await axios.get(' https://construction-website-x1xn.onrender.com/api/plots');
-      setPlots(res.data);
-      // Clear any previous image errors
-      setImageErrors({});
-    } catch (err) {
-      setMessage('Error adding plot. Please try again.');
-    }
-  };
-
   const handleInquiry = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(' https://construction-website-x1xn.onrender.com/api/inquiries', { ...inquiry, type: 'plot' });
+      await axios.post('https://construction-website-x1xn.onrender.com/api/inquiries', { ...inquiry, type: 'plot' });
       setMessage('Inquiry sent successfully!');
       setInquiry({ name: '', email: '', message: '' });
     } catch (err) {
@@ -126,7 +61,7 @@ export default function PlotMarket() {
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(' https://construction-website-x1xn.onrender.com/api/bookings', {
+      await axios.post('https://construction-website-x1xn.onrender.com/api/bookings', {
         ...bookingForm,
         plotId: bookingModal.plot._id,
         plotTitle: bookingModal.plot.title,
@@ -150,80 +85,9 @@ export default function PlotMarket() {
         </div>
       </div>
 
-      {/* Add Plot Form (Temporarily Public for Testing) */}
-      {showAdd && (
-        <div className="container mx-auto px-4 mb-8">
-          <form onSubmit={handleAddPlot} className="bg-white rounded-lg shadow-lg p-8 grid gap-4 md:grid-cols-2 border border-[#6EE7B7]">
-            <input className="border border-[#6EE7B7] bg-white text-[#1E293B] p-2 rounded placeholder-black focus:border-[#10B981]" placeholder="Title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
-            <input className="border border-[#6EE7B7] bg-white text-[#1E293B] p-2 rounded placeholder-black focus:border-[#10B981]" placeholder="Location" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} required />
-            <input className="border border-[#6EE7B7] bg-white text-[#1E293B] p-2 rounded placeholder-black focus:border-[#10B981]" placeholder="Price" type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required />
-            
-            {/* Custom File Upload */}
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-[#334155] mb-2">Plot Image</label>
-              <div 
-                className="border-2 border-dashed border-[#6EE7B7] rounded-lg p-6 text-center hover:border-[#10B981] transition-colors cursor-pointer"
-                onClick={handleUploadClick}
-              >
-                {selectedFile ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center space-x-2">
-                      <svg className="w-8 h-8 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-[#1E293B] font-medium">{selectedFile.name}</span>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedFile(null);
-                        setForm(f => ({ ...f, image: '' }));
-                        setFileError('');
-                      }}
-                      className="text-[#EF4444] hover:text-[#DC2626] text-sm"
-                    >
-                      Remove file
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <svg className="mx-auto w-12 h-12 text-[#6EE7B7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <div className="text-[#1E293B]">
-                      <span className="font-medium">Click to upload</span> or drag and drop
-                    </div>
-                    <p className="text-xs text-[#64748B]">PNG, JPG, JPEG up to 5MB</p>
-                  </div>
-                )}
-                <input 
-                  ref={setFileInputRef}
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handleFileChange}
-                  required={!selectedFile}
-                />
-              </div>
-              {fileError && (
-                <p className="text-[#EF4444] text-sm mt-1">{fileError}</p>
-              )}
-            </div>
-            
-            <input className="border border-[#6EE7B7] bg-white text-[#1E293B] p-2 rounded placeholder-black focus:border-[#10B981]" placeholder="Contact Info" value={form.contactInfo} onChange={e => setForm(f => ({ ...f, contactInfo: e.target.value }))} />
-            <textarea className="border border-[#6EE7B7] bg-white text-[#1E293B] p-2 rounded col-span-2 placeholder-black focus:border-[#10B981]" placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} required />
-            <button className="bg-[#10B981] text-white px-4 py-2 rounded font-bold col-span-2 hover:bg-[#059669] transition" type="submit">Add Plot</button>
-          </form>
-        </div>
-      )}
-
       {/* Available Plots Section */}
-      <div className="container mx-auto px-4 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="container mx-auto px-4 mb-8">
         <h3 className="text-2xl font-bold text-[#334155]">Available Plots</h3>
-        <button className="bg-[#10B981] text-white px-6 py-2 rounded font-bold shadow hover:bg-[#059669] transition" onClick={() => setShowAdd(!showAdd)}>
-          {showAdd ? 'Cancel' : 'Add Plot'}
-        </button>
       </div>
       <div className="container mx-auto px-4 grid md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
         {plots.map(plot => (
