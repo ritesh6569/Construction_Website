@@ -11,7 +11,7 @@ export default function AdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/admin/login', { username, password });
+      const res = await axios.post(' https://construction-website-x1xn.onrender.com/api/admin/login', { username, password });
       localStorage.setItem('adminToken', res.data.token);
       navigate('/admin');
     } catch (err) {

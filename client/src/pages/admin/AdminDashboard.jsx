@@ -10,13 +10,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (tab === 'plots') {
-      axios.get('http://localhost:5000/api/plots', { headers: { Authorization: `Bearer ${token}` } }).then(res => setPlots(res.data));
+      axios.get(' https://construction-website-x1xn.onrender.com/api/plots', { headers: { Authorization: `Bearer ${token}` } }).then(res => setPlots(res.data));
     }
     if (tab === 'inquiries') {
-      axios.get('http://localhost:5000/api/inquiries', { headers: { Authorization: `Bearer ${token}` } }).then(res => setInquiries(res.data));
+      axios.get(' https://construction-website-x1xn.onrender.com/inquiries', { headers: { Authorization: `Bearer ${token}` } }).then(res => setInquiries(res.data));
     }
     if (tab === 'bookings') {
-      axios.get('http://localhost:5000/api/bookings', { headers: { Authorization: `Bearer ${token}` } }).then(res => setBookings(res.data));
+      axios.get(' https://construction-website-x1xn.onrender.com/api/bookings', { headers: { Authorization: `Bearer ${token}` } }).then(res => setBookings(res.data));
     }
   }, [tab, token]);
 

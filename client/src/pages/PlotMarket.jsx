@@ -20,7 +20,7 @@ export default function PlotMarket() {
   const isAdmin = !!localStorage.getItem('adminToken');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/plots').then(res => setPlots(res.data));
+    axios.get(' https://construction-website-x1xn.onrender.com/api/plots').then(res => setPlots(res.data));
   }, []);
 
   const handleFileChange = (e) => {
@@ -60,7 +60,7 @@ export default function PlotMarket() {
       return demoImage;
     }
     if (plot.image && plot.image.startsWith('/uploads/')) {
-      const imageUrl = `http://localhost:5000${plot.image}`;
+      const imageUrl = ` https://construction-website-x1xn.onrender.com${plot.image}`;
       return imageUrl;
     }
     if (plot.image && plot.image.startsWith('http')) {
@@ -81,7 +81,7 @@ export default function PlotMarket() {
       if (form.image) {
         formData.append('image', form.image);
       }
-      await axios.post('http://localhost:5000/api/plots', formData, {
+      await axios.post(' https://construction-website-x1xn.onrender.com/api/plots', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -91,7 +91,7 @@ export default function PlotMarket() {
       setSelectedFile(null);
       setShowAdd(false);
       // Refresh plots list
-      const res = await axios.get('http://localhost:5000/api/plots');
+      const res = await axios.get(' https://construction-website-x1xn.onrender.com/api/plots');
       setPlots(res.data);
       // Clear any previous image errors
       setImageErrors({});
@@ -103,7 +103,7 @@ export default function PlotMarket() {
   const handleInquiry = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/inquiries', { ...inquiry, type: 'plot' });
+      await axios.post(' https://construction-website-x1xn.onrender.com/api/inquiries', { ...inquiry, type: 'plot' });
       setMessage('Inquiry sent successfully!');
       setInquiry({ name: '', email: '', message: '' });
     } catch (err) {
@@ -126,7 +126,7 @@ export default function PlotMarket() {
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/bookings', {
+      await axios.post(' https://construction-website-x1xn.onrender.com/api/bookings', {
         ...bookingForm,
         plotId: bookingModal.plot._id,
         plotTitle: bookingModal.plot.title,
